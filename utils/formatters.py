@@ -1,31 +1,36 @@
 def format_results(columns, rows, max_rows=100):
-    """Format SQL query results into a readable table"""
-    if not rows:
+    """Format SQL query results into a readable table or list"""
+    if not columns or not rows:
         return "No results found."
-    
-    if len(rows) > max_rows:
-        rows = rows[:max_rows]
-        truncated = True
-    else:
-        truncated = False
-    
-    # Create header
-    header = "| " + " | ".join(str(col) for col in columns) + " |"
-    separator = "|" + "|".join(["---"] * len(columns)) + "|"
-    
-    # Create rows
-    formatted_rows = []
+    # Limit rows
+    rows = rows[:max_rows]
+    # If both 'title' and 'category'/'category_name' columns exist, format for user clarity
+    col_names = [c.lower() for c in columns]
+    # Try to find a title/name column
+    title_col = None
+    for t in ['title', 'name', 'article_title', 'article_name']:
+        if t in col_names:
+            title_col = t
+            break
+    # Try to find a category column
+    category_col = None
+    for c in ['name','category', 'category_name', 'category_title', 'categories', 'categoryid', 'category_id', 'cat_name', 'cat_title']:
+        if c in col_names:
+            category_col = c
+            break
+    if title_col and category_col:
+        out = []
+        for idx, row in enumerate(rows, 1):
+            title = row[col_names.index(title_col)]
+            category = row[col_names.index(category_col)]
+            out.append(f"{idx}. Title: {title}\n   Category: {category}\n---")
+        return "\n".join(out)
+    # Otherwise, fallback to tabular output
+    header = " | ".join(columns)
+    lines = [header, "-" * len(header)]
     for row in rows:
-        formatted_row = "| " + " | ".join(str(cell) for cell in row) + " |"
-        formatted_rows.append(formatted_row)
-    
-    # Combine everything
-    result = "\n".join([header, separator] + formatted_rows)
-    
-    if truncated:
-        result += f"\n\n(Showing first {max_rows} rows out of {len(rows)})"
-    
-    return result
+        lines.append(" | ".join(str(cell) for cell in row))
+    return "\n".join(lines)
 
 def format_schema_info(table_info):
     """Format database schema information"""
